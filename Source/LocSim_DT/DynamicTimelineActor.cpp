@@ -2,11 +2,9 @@
 
 ADynamicTimelineActor::ADynamicTimelineActor()
 {
-    PrimaryActorTick.bCanEverTick = false;
-
-    // Create and initialize the Timeline component
-    TimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("TimelineComponent"));
-  
+    FName TimelineName(TEXT("TrainMover"));
+    UTimelineComponent* FoundTimeline = FindComponentByClass<UTimelineComponent>();
+    Timeline = FoundTimeline;
 }
 
 void ADynamicTimelineActor::BeginPlay()
@@ -14,28 +12,60 @@ void ADynamicTimelineActor::BeginPlay()
     Super::BeginPlay();
 }
 
-void ADynamicTimelineActor::AddToTimeline(UTimelineComponent* Timeline, float Time, float Value)
+void ADynamicTimelineActor::AddToTimeline(UTimelineComponent* InTimeline, const TArray<float>& Keys, const TArray<float>& Values)
 {
-    if (Timeline)
+
+    if (!InTimeline)  // Check if InTimeline is valid
     {
-        // Example logic to add time and value to the timeline
-        // In a real scenario, you'd need to define how you're adding values
-        // This is just a placeholder for demonstration purposes
-
-        // Get the current length of the timeline
-        float CurrentLength = Timeline->GetTimelineLength();
-
-        // Extend the timeline if the new time exceeds the current length
-        if (Time > CurrentLength)
-        {
-            Timeline->SetTimelineLength(Time);
-        }
-
-        // Add a new track or update the value at the specified time
-        // This would depend on how your timeline is set up
-        // For example, using float tracks, etc.
-
-        // Here, you can use a custom function to set the values at specified time
-        // This needs to be implemented based on your timeline setup
+        UE_LOG(LogTemp, Warning, TEXT("InTimeline is null!"));
+        return;
     }
+
+    //TimelineCurve = ConstructorHelpers::FObjectFinder<UCurveFloat> CurveAsset(TEXT("CurveFloat'/Game/Blueprints/Train.AlphaCurve.AlphaCurve'"));
+
+    if (!TimelineCurve)  // Check if TimelineCurve is valid
+    {
+        UE_LOG(LogTemp, Warning, TEXT("TimelineCurve is null!"));
+        return;
+    }
+
+    // Clear existing tracks
+    InTimeline->SetFloatCurve(nullptr, FName(TEXT("Alpha")));   // Clears the float track
+    InTimeline->SetTimelineFinishedFunc(FOnTimelineEvent());         // Clears the event track
+
+    // Ensure Keys and Values have the same length
+    if (Keys.Num() != Values.Num())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Keys and Values arrays must have the same length."));
+        return;
+    }
+
+    // Check if there are any keys to add
+    if (Keys.Num() == 0)
+    {
+        return; // No keys provided
+    }
+
+    // Initialize the curve with a starting key if needed
+    TimelineCurve->FloatCurve.AddKey(0.0f, 0.0f);
+
+    // Add the keys and values to the timeline
+    for (int32 i = 0; i < Keys.Num(); ++i)
+    {
+        // Add key to the curve
+        TimelineCurve->FloatCurve.AddKey(Keys[i], Values[i]);
+
+        // Create a timeline callback for the current timeline
+        FOnTimelineFloat TimelineCallback;
+        TimelineCallback.BindUFunction(this, FName("TimelineFloatReturn"));
+
+        // This will add the curve to the timeline
+        InTimeline->AddInterpFloat(TimelineCurve, TimelineCallback);
+    }
+
+    // Set the total length of the timeline to the last key
+    float LastKey = Keys[Keys.Num() - 1];
+    InTimeline->SetTimelineLength(LastKey);
 }
+
+

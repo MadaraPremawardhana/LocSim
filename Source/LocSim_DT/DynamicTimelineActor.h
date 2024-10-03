@@ -1,8 +1,11 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/TimelineComponent.h"
+#include "Curves/CurveFloat.h"  
 #include "DynamicTimelineActor.generated.h"
 
 UCLASS()
@@ -18,9 +21,12 @@ protected:
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Timeline")
-    void AddToTimeline(UTimelineComponent* Timeline, float Time, float Value);
+    void AddToTimeline(UTimelineComponent* InTimeline, const TArray<float>& Keys, const TArray<float>& Values); 
 
 private:
     UPROPERTY()
-    UTimelineComponent* TimelineComponent;
+    UTimelineComponent* Timeline;   // Member variable to hold the Timeline
+    UPROPERTY(EditAnywhere, Category = "Timeline")
+    UCurveFloat* TimelineCurve ;      // Curve to use for the timeline
+
 };
