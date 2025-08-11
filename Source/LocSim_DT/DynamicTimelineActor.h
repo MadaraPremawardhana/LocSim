@@ -1,3 +1,4 @@
+// DynamicTimelineActor.h
 #pragma once
 
 #include "CoreMinimal.h"
@@ -18,15 +19,23 @@ protected:
     virtual void BeginPlay() override;
 
 public:
-    // The main function you'll call from Blueprint
+    virtual void Tick(float DeltaTime) override;
+
+    // Timeline component
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Timeline")
+    UTimelineComponent* Alpha;
+
+    // The dynamic float curve used by timeline
+    UPROPERTY()
+    UCurveFloat* DynamicCurve;
+
+    // Delegate for timeline update
+    FOnTimelineFloat UpdateDelegate;
+
+    // Function to apply the timeline data
     UFUNCTION(BlueprintCallable, Category = "Timeline")
-    void SetDynamicTimeline(UTimelineComponent* Timeline, const TArray<float>& Keys, const TArray<float>& Values);
+    void ApplyDynamicTimeline(UTimelineComponent* Timeline, const TArray<FVector2D>& KeyValuePoints);
 
     UFUNCTION()
     void OnTimelineUpdate(float Value);
-
-private:
-    // Must be UPROPERTY to avoid garbage collection
-    UPROPERTY()
-    UCurveFloat* RuntimeCurve;
 };
